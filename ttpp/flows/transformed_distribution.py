@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import warnings
 
-from typing import List, Union
+from typing import List, Optional, Union
 
 from .base import Flow
 from .rnn import SplineRNN
@@ -130,6 +130,9 @@ class TransformedExponential(nn.Module):
     def rsample_n(self, batch_size: int, seq_len: int, device: str='cuda:0'):
         """Draw a sequences of given length from the transformed distribution.
 
+        IMPORTANT: Make sure that you use the function `clip_times` to convert raw samples
+        obtained by `rsample` into valid samples on the interval [0, t_max].
+
         Returns:
             x: Sample, shape [batch_size, seq_len 1]
         """
@@ -139,6 +142,9 @@ class TransformedExponential(nn.Module):
     @torch.jit.export
     def rsample(self, batch_size: int, device: str='cuda:0', init_seq_len: int = 100, seq_len_mult: float = 1.5):
         """Sample from the transformed distribution.
+
+        IMPORTANT: Make sure that you use the function `clip_times` to convert raw samples
+        obtained by `rsample` into valid samples on the interval [0, t_max].
 
         This a wrapper around `rsample_n` that ensures that the event sequence
         is long enough to cover the [0, t_max] interval.
@@ -160,6 +166,42 @@ class TransformedExponential(nn.Module):
                                "You should probably increase init_seq_len")
                 seq_len = int(seq_len_mult * seq_len)
 
+    def clip_times(self, x_raw: torch.Tensor, temp: Optional[float] = None):
+        """Convert a raw sample (that may contain events after t_max) into a valid TPP sample.
+
+        Times after t_max are clipped to be equal to t_max.
+
+        Example:
+            >>> dist.t_max
+            6.0
+            >>> x_raw = torch.tensor([[2.0, 3.1, 4.1, 5.2, 8.1],
+                                      [1.5, 2.7, 5.6, 6.9, 7.2]]).unsqueeze(-1)
+            >>> t, mask = dist.clip_times(x_raw)
+            >>> t.squeeze(-1)
+            tensor([[2.0, 3.1, 4.1, 5.2, 6.0],
+                    [1.5, 2.7, 5.6, 6.0, 6.0]])
+            >>> mask.squeeze(-1)
+            tensor([[1., 1., 1., 1., 0.],
+                    [1., 1., 1., 0., 0.]])
+            >>> logp = dist.log_prob(t, mask)  # Compute log-likelihood of the sample x_raw
+        
+        Args:
+            x_raw: Sample generated with `self.rsample`, shape [batch_size, seq_len, 1]
+            temp: Temperature for the differentiable relaxation
+        
+        Returns:
+            x: Clipped arrival times with padding, shape [batch_size, seq_len, 1]
+            mask: Boolean mask indicating which entries of x correspond to 
+                observed events (i.e. not padding), shape [batch_size, seq_len, 1]
+        
+        """
+        if temp is None:
+            mask = (x_raw < self.t_max).float()
+        else:
+            mask = torch.sigmoid((self.t_max - x_raw ) / temp)
+        x = x_raw.clamp(max=self.t_max)
+        return x, mask
+    
     def init(self):
         """Initializes modules (required for RNN after loading)
         """
