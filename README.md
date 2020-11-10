@@ -1,5 +1,7 @@
 # Fast and Flexible Temporal Point Processes with Triangular Maps
-![banner](https://i.postimg.cc/T1ytwRXn/tritpp-logo.png)
+<p align="center">
+  <img width="640" src="https://i.postimg.cc/Y9R38vt6/tritpp-logo.png">
+</p>
 
 This repository includes a reference implementation of the algorithms described in ["Fast and Flexible Temporal Point Processes with Triangular Maps"](https://arxiv.org/abs/2006.12631) by Oleksandr Shchur, Nicholas Gao, Marin Biloš and Stephan Günnemann (Oral, NeurIPS 2020).
 
