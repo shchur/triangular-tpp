@@ -5,6 +5,8 @@
 
 This repository includes a reference implementation of the algorithms described in ["Fast and Flexible Temporal Point Processes with Triangular Maps"](https://arxiv.org/abs/2006.12631) by Oleksandr Shchur, Nicholas Gao, Marin Biloš and Stephan Günnemann (Oral, NeurIPS 2020).
 
+- [Video explaining the paper](https://videos.neurips.cc/video/slideslive-38938478)
+
 Temporal point processes (TPPs) allow us to define probability distributions over variable-length event sequences in some time interval `[0, t_max]`.
 In our paper, we show how to define TPPs using invertible transformations, similar to normalizing flows.
 The code includes new parametrizations for several existing TPPs as well as a new, more flexible model.
