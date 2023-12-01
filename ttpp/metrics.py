@@ -16,17 +16,10 @@ def counting_distance(x: np.ndarray, Y: np.ndarray, t_max: float):
     Returns:
         np.ndarray: distance
     """
-    x = x[None].repeat(Y.shape[0], 0)
-    x_len = (x < t_max).sum(-1)
-    y_len = (Y < t_max).sum(-1)
-    to_swap = x_len > y_len
-    x[to_swap], Y[to_swap] = x[to_swap], Y[to_swap]
-    mask_x = x < t_max
-    mask_y = Y < t_max
-    result = (np.abs(x - Y) * mask_x).sum(-1)
-    result += ((t_max - Y) * (~mask_x & mask_y)).sum(-1)
+    Y = np.minimum(Y, t_max)
+    x = np.minimum(x, t_max)
+    result = np.abs(x[None] - Y).sum(-1)
     return result
-
 
 def gaussian_kernel(x: np.ndarray, sigma2: float = 1):
     return np.exp(-x/(2*sigma2))
